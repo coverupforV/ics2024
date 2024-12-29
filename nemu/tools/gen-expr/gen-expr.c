@@ -31,57 +31,64 @@ static char *code_format =
 "  return 0; "
 "}";
 
-static int choose(int i) {
-	return rand()%i;
-}
+int index_buf  = 0;
 
-static void gen_num() {
-	char num_buf[4];
-	num_buf[0] = '\0';
-	int num = choose(100) + 1;
-	sprintf(num_buf, "%d", num);
-	strcat(buf, num_buf);
+int choose(int n){
+    int flag = rand() % 3 ; // 0 1 2
+	//printf("index = %d, flag = %d. \n",index_buf, flag);
+    return flag;
 }
-
-static void gen(char c) {
-	char ch_buf[2] = { c, '\0'};
-	strcat(buf, ch_buf);
+void gen_num(){
+    int num = rand()% 100;
+    int num_size = 0, num_tmp = num;
+    while(num_tmp){
+	num_tmp /= 10;
+	num_size ++;
+    }
+    int x = 1;
+    while(num_size)
+    {
+	x *= 10;
+	num_size -- ;
+    }
+    x /= 10;
+    while(num)
+    {
+	char c = num / x + '0';
+	num %= x;
+	x /= 10;
+	buf[index_buf ++] = c;
+    }
 }
-
-static void gen_rand_op() {
-	int i = choose(4);
-	switch(i) {
-		case 0: gen('+'); break;
-		case 1: gen('-'); break;
-		case 2: gen('*'); break;
-		case 3: gen('/'); break;
-		default:
-	}
+void gen(char c){
+    buf[index_buf ++] = c;
+}
+void gen_rand_op(){
+    char op[4] = {'+', '-', '*', '/'};
+    int op_position = rand() % 4;
+    buf[index_buf ++] = op[op_position];
 }
 
 
 static void gen_rand_expr() {
-  //buf[0] = '\0';
-  if(strlen(buf) > 500) {
-		gen('(');
-    gen_num();
-    gen(')');
-		return;
-	}
-  	int i = choose(3);
-	switch(i) {
-		case 0: gen_num(); break;
-		case 1: 
-      if (strlen(buf) + 2 < sizeof(buf)) {
-        gen('(');gen_rand_expr();gen(')'); 
-      }
-      break;
-		default: 
-      if (strlen(buf) + 1 < sizeof(buf)) {
-        gen_rand_expr();gen_rand_op();gen_rand_expr();
-      }
-      break;
-	}
+    //    buf[0] = '\0';	
+   if(index_buf > 65530)
+       	printf("overSize\n");
+  switch (choose(3)) {
+	case 0:
+	    gen_num();
+	    break;
+	case 1:
+	    gen('(');
+	    gen_rand_expr();
+	    gen(')');
+	    break;
+	default:
+	    gen_rand_expr();
+	    gen_rand_op();
+	    gen_rand_expr();
+	    break;
+    }
 }
 
 int main(int argc, char *argv[]) {
@@ -95,6 +102,7 @@ int main(int argc, char *argv[]) {
   for (i = 0; i < loop; i ++) {
 	  buf[0] = '\0';
     gen_rand_expr();
+    buf[index_buf] = '\0';
     //printf("Generated expression: %s\n", buf); // 调试信息
     sprintf(code_buf, code_format, buf);
 
@@ -104,22 +112,17 @@ int main(int argc, char *argv[]) {
     fclose(fp);
 
     int ret = system("gcc /tmp/.code.c -o /tmp/.expr -Werror 2> /tmp/.error.txt");
-    if (ret != 0) {
-    	i--;
-	continue;
-    }
+    if (ret != 0) continue;
 
     fp = popen("/tmp/.expr", "r");
     assert(fp != NULL);
 
     int result;
-    if (fscanf(fp, "%d", &result) != 1) {
-    	i--;
-	continue;
-    }
+    if (fscanf(fp, "%d", &result) != 1) continue;
     pclose(fp);
 
     printf("%u %s\n", result, buf);
+    index_buf = 0;
   }
   return 0;
 }
