@@ -59,8 +59,8 @@ static struct rule {
 	{"-", '-'},	//subtract
 	{"\\*", '*'},	//multiply
 	{"/", '/'}, 	//divide
-	{"[(]", '('},
-	{"[)]", ')'},
+	{"\\(", '('},
+	{"\\)", ')'},
 	{"$$", '$'},
 };
 
@@ -247,16 +247,16 @@ uint32_t expr(char *e, bool *success) {
     *success = false;
     return 0;
   }
-  for (int i = 0; i < nr_token; i++) {
-  	if(tokens[i].type == '-') {
-		if(i == 0 || (tokens[i-1].type != ')' && tokens[i-1].type != TK_NUM))
-			tokens[i].type = TK_MINUS;
-	}
-	if(tokens[i].type == '*') {
-		if(i == 0 || (tokens[i-1].type != ')' && tokens[i-1].type != TK_NUM))
-			tokens[i].type = TK_DEREF;
-	}
-  }
+  // for (int i = 0; i < nr_token; i++) {
+  // 	if(tokens[i].type == '-') {
+	// 	if(i == 0 || (tokens[i-1].type != ')' && tokens[i-1].type != TK_NUM))
+	// 		tokens[i].type = TK_MINUS;
+	// }
+	// if(tokens[i].type == '*') {
+	// 	if(i == 0 || (tokens[i-1].type != ')' && tokens[i-1].type != TK_NUM))
+	// 		tokens[i].type = TK_DEREF;
+	// }
+  //}
   /* TODO: Insert codes to evaluate the expression. */
   return eval(0, nr_token - 1);
 }
