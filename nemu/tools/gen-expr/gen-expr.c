@@ -62,15 +62,26 @@ static void gen_rand_op() {
 
 static void gen_rand_expr() {
   //buf[0] = '\0';
-  	if(strlen(buf) > 500) {
-		gen('(');gen_num();gen(')');
-		return;
-	}
+  if (strlen(buf) > 65000) return;
+  //if(strlen(buf) > 500) {
+		//gen('(');
+    gen_num();
+    //gen(')');
+		//return;
+	//}
   	int i = choose(3);
 	switch(i) {
 		case 0: gen_num(); break;
-		case 1: gen('(');gen_rand_expr();gen(')'); break;
-		default: gen_rand_expr();gen_rand_op();gen_rand_expr();break;
+		case 1: 
+      if (strlen(buf) + 2 < sizeof(buf)) {
+        gen('(');gen_rand_expr();gen(')'); 
+      }
+      break;
+		default: 
+      if (strlen(buf) + 1 < sizeof(buf)) {
+        gen_rand_expr();gen_rand_op();gen_rand_expr();
+      }
+      break;
 	}
 }
 
@@ -85,7 +96,7 @@ int main(int argc, char *argv[]) {
   for (i = 0; i < loop; i ++) {
 	  buf[0] = '\0';
     gen_rand_expr();
-
+    //printf("Generated expression: %s\n", buf); // 调试信息
     sprintf(code_buf, code_format, buf);
 
     FILE *fp = fopen("/tmp/.code.c", "w");
