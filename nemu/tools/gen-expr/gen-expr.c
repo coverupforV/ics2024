@@ -62,13 +62,12 @@ static void gen_rand_op() {
 
 static void gen_rand_expr() {
   //buf[0] = '\0';
-  if (strlen(buf) > 65000) return;
-  //if(strlen(buf) > 500) {
-		//gen('(');
+  if(strlen(buf) > 500) {
+		gen('(');
     gen_num();
-    //gen(')');
-		//return;
-	//}
+    gen(')');
+		return;
+	}
   	int i = choose(3);
 	switch(i) {
 		case 0: gen_num(); break;
