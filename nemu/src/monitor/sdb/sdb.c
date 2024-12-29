@@ -88,6 +88,53 @@ static int cmd_x(char *args){
     return 0;
 }
 
+static int cmd_test(char *args){
+  int right_ans = 0;
+  FILE *input_file = fopen("/home/pcw/ics2024/nemu/tools/gen-expr/input.txt", "r");
+    if (input_file == NULL) {
+        perror("Error opening input file");
+        return 1;
+    }
+ 
+    char record[1024];
+    unsigned real_val;
+    char buf[1024];
+ 
+    // 循环读取每一条记录
+    for (int i = 0; i < 100; i++) {
+        // 读取一行记录
+        if (fgets(record, sizeof(record), input_file) == NULL) {
+            perror("Error reading input file");
+            break;
+        }
+ 
+        // 分割记录，获取数字和表达式
+        char *token = strtok(record, " ");
+        if (token == NULL) {
+            printf("Invalid record format\n");
+            continue;
+        }
+        real_val = atoi(token); // 将数字部分转换为整数
+ 
+        // 处理表达式部分，可能跨越多行
+        strcpy(buf, ""); // 清空buf
+        while ((token = strtok(NULL, "\n")) != NULL) {
+            strcat(buf, token);
+            strcat(buf, " "); // 拼接换行后的部分，注意添加空格以分隔多行内容
+        }
+ 
+        // 输出结果
+        printf("Real Value: %u, Expression: %s\n", real_val, buf);
+        bool flag = false;
+        unsigned res = expr(buf,&flag);
+        if(res == real_val)right_ans ++;
+ 
+    }
+    printf("test 100 expressions,the accuracy is %d/100\n",right_ans);
+    fclose(input_file);
+    return 0;
+}
+
 static int cmd_help(char *args);
 
 static struct {
@@ -96,6 +143,7 @@ static struct {
   int (*handler) (char *);
 } cmd_table [] = {
   { "help", "Display information about all supported commands", cmd_help },
+  {"test", "test pa1.2", cmd_test},
   { "c", "Continue the execution of the program", cmd_c },
   { "q", "Exit NEMU", cmd_q },
   { "si", "Let the program step into N instructions and then pause the execution, when N is not given, the default is 1",cmd_si},
