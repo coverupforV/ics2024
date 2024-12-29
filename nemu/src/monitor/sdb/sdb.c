@@ -98,7 +98,7 @@ static int cmd_test(char *args){
  
     char record[1024];
     unsigned real_val;
-    char buf[10240];
+    char buf[1024];
  
     // 循环读取每一条记录
     for (int i = 0; i < 100; i++) {
