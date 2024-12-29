@@ -90,7 +90,7 @@ static int cmd_x(char *args){
 
 static int cmd_test(char *args){
   int right_ans = 0;
-  FILE *input_file = fopen("/home/pcw/ics2024/nemu/tools/gen-expr/input.txt", "r");
+  FILE *input_file = fopen("/home/pcw/ics2024/nemu/tools/gen-expr/input", "r");
     if (input_file == NULL) {
         perror("Error opening input file");
         return 1;
