@@ -88,6 +88,16 @@ static int cmd_x(char *args){
     return 0;
 }
 
+// static int cmd_p(char *args) {
+//   char *arg = strtok(NULL, "");
+
+//   bool success = true;
+//   printf("%u\n", expr(arg, &success));
+
+//   return 0;
+
+// }
+
 static int cmd_test(char *args){
   int right_ans = 0;
   FILE *input_file = fopen("/home/pcw/ics2024/nemu/tools/gen-expr/input", "r");
@@ -149,6 +159,7 @@ static struct {
   { "si", "Let the program step into N instructions and then pause the execution, when N is not given, the default is 1",cmd_si},
   { "info", "Display information about regersters(r) or watchpoints(w)", cmd_info},
   { "x", "Calculate the value of the expression EXPR and use the result as the starting memory address",cmd_x}
+  // { "p", "expression evaluation", cmd_p},
   /* TODO: Add more commands */
 
 };
