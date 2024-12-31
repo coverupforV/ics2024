@@ -22,16 +22,9 @@
 /* We use the POSIX regex functions to process regular expressions.
  * Type 'man regex' for more information about POSIX regex functions.
  */
-/*提供了 POSIX 正则表达式函数的声明和定义
-regcomp()：编译正则表达式。
-regexec()：执行正则表达式匹配。
-regerror()：获取正则表达式错误信息。
-regfree()：释放编译后的正则表达式。*/
 #include <regex.h>
 #define word_t uint32_t
 
-//定义了一个枚举类型，用于表示不同的标记类型。每个标记类型都与一个整数值关联。
-//这种设置是为了确保 TK_NOTYPE 的值大于 255，以便在后续代码中可以与 ASCII 字符一起使用，而不会与 ASCII 字符冲突。
 enum {
   TK_NOTYPE = 256, TK_EQ, TK_NUMBER,TK_NEGATIVE,TK_NOEQ,TK_AND,TK_POINTER_DEREF,TK_REG,TK_HEX,
 
