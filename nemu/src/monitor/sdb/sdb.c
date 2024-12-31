@@ -102,6 +102,38 @@ static int cmd_p(char *args){
   return 0; 
 }
 
+//设置监视点
+static int cmd_w(char *args){
+ if (!args)
+  {
+    printf("Usage: w EXPR\n");
+    return 0;
+  }
+  bool success;
+  int32_t res = expr(args, &success);
+  if (!success) 
+  {
+    printf("invalid expression\n");
+  } 
+  else 
+  {
+    wp_set(args, res);
+  }
+  return 0;
+}
+ 
+//删除序列号为N的监视点
+static int cmd_d(char *args){
+  char *arg = strtok(NULL, "");
+  if (!arg) {
+    printf("Usage: d N\n");
+    return 0;
+  }
+  int no = strtol(arg, NULL, 10);
+  wp_remove(no);
+  return 0;
+}
+
 static int cmd_help(char *args);
 
 static struct {
@@ -117,6 +149,9 @@ static struct {
   { "info", "Display information about regersters(r) or watchpoints(w)", cmd_info},
   { "x", "Calculate the value of the expression EXPR and use the result as the starting memory address",cmd_x},
   { "p", "expression evaluation", cmd_p},
+  { "w", "Set Watchpoint", cmd_w},
+  { "d", "Delete Watchpoint", cmd_d},
+
   /* TODO: Add more commands */
 
 };
