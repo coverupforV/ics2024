@@ -13,13 +13,16 @@
 * See the Mulan PSL v2 for more details.
 ***************************************************************************************/
 
+#include <inttypes.h>
 #include <isa.h>
 #include <cpu/cpu.h>
 #include <readline/readline.h>
 #include <readline/history.h>
 #include <utils.h>
-#include <memory/paddr.h>
+#include <memory/vaddr.h>
 #include "sdb.h"
+#include <stdio.h>
+#include <assert.h>
 
 static int is_batch_mode = false;
 
@@ -59,7 +62,7 @@ static int cmd_si(char *args){
   char *num_str = strtok(NULL, " ");
   int num = 0;
   if (num_str != NULL) {
-    Assert(sscanf(num_str, "%d", &num), "The input step num is not a number");
+    assert("The input step num is not a number");
   } else {
     /* no argument given, the default num of step is 1 */
     num = 1;
@@ -75,7 +78,7 @@ static int cmd_info(char *args){
     isa_reg_display();
   } else if (strcmp(arg, "w") == 0) {
     /* info w : print the info of watch point*/
-    //print_watchpoint();
+    display_wp();
   } else {
     printf("command info need argument r or w\n");
   }
@@ -83,65 +86,51 @@ static int cmd_info(char *args){
 }
 
 static int cmd_x(char *args){
-    char* n = strtok(args," ");
-    char* baseaddr = strtok(NULL," ");
-    int len = 0;
-    paddr_t addr = 0;
-    sscanf(n, "%d", &len);
-    sscanf(baseaddr,"%x", &addr);
-    for(int i = 0 ; i < len ; i ++)
-    {
-        printf("%x\n",paddr_read(addr,4));//addr len
-        addr = addr + 4;
+    unsigned int num = 1;
+    vaddr_t addr;
+    word_t mem;
+    int ret;
+    ret = sscanf(args, "%u %x", &num, &addr);
+    if (ret < 2) {
+        // 如果第一次读取失败，则尝试只读取十六进制数
+        sscanf(args, "%x", &addr);
+    }
+    /*sscanf(args, "%u %x", &num, &addr);*/
+    for (int i = 1; i <= num; i++) {
+        if (i % 8 == 1) {
+            printf("0x%08x :", addr);
+        }
+        mem = vaddr_read(addr, 1);
+        printf("\t0x%02x", mem);
+        if (i % 8 == 0 || i == num) {printf("\n"); };
+        addr += 1;
     }
     return 0;
 }
 
 //表达式求值
-// static int cmd_p(char *args){
-//   bool success=true;
-//   int32_t res = expr(args, &success);
-//   if (!success) 
-//   {
-//     printf("invalid expression\n");
-//   } else 
-//   {
-//     printf("%d\n", res);
-//   }
-//   return 0; 
-// }
+static int cmd_p(char *args) {
+    bool success = true;
+    word_t res = expr(args, &success);
+    if (success) {
+        printf("%u\n", res);
+    } else {
+        printf("the expression is wrong, check it\n");
+    }
+    return 0;
+}
 
-// //设置监视点
-// static int cmd_w(char *args){
-//  if (!args)
-//   {
-//     printf("Usage: w EXPR\n");
-//     return 0;
-//   }
-//   bool success;
-//   int32_t res = expr(args, &success);
-//   if (!success) 
-//   {
-//     printf("invalid expression\n");
-//   } 
-//   else 
-//   {
-//     wp_set(args, res);
-//   }
-//   return 0;
-// }
- 
-//删除序列号为N的监视点
-// static int cmd_d(char *args){
-//   char *arg = strtok(NULL, "");
-//   if (!arg) {
-//     printf("Usage: d N\n");
-//     return 0;
-//   }
-//   int no = strtol(arg, NULL, 10);
-//   wp_remove(no);
-//   return 0;
-// }
+static int cmd_w(char *args) {
+    new_wp(args);
+    return 0;
+}
+
+static int cmd_d(char *args) {
+    int NO;
+    sscanf(args, "%d", &NO);
+    free_wp(NO);
+    return 0;
+}
 
 static int cmd_help(char *args);
 
@@ -157,9 +146,9 @@ static struct {
   { "si", "Let the program step into N instructions and then pause the execution, when N is not given, the default is 1",cmd_si},
   { "info", "Display information about regersters(r) or watchpoints(w)", cmd_info},
   { "x", "Calculate the value of the expression EXPR and use the result as the starting memory address",cmd_x},
-  //{ "p", "expression evaluation", cmd_p},
-  //{ "w", "Set Watchpoint", cmd_w},
-  //{ "d", "Delete Watchpoint", cmd_d},
+  { "p", "expression evaluation", cmd_p},
+  { "w", "Set Watchpoint", cmd_w},
+  { "d", "Delete Watchpoint", cmd_d},
 
   /* TODO: Add more commands */
 
