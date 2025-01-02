@@ -12,6 +12,7 @@
 *
 * See the Mulan PSL v2 for more details.
 ***************************************************************************************/
+#include <inttypes.h>
 #include "debug.h"
 #include <stdbool.h>
 #include <errno.h>
