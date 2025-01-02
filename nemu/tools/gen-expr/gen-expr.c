@@ -44,7 +44,7 @@ static void gen(char c) {
 static void gen_num() {
     int num = rand() % 1000;
     char num_buffer[15];
-    snprintf(num_buffer, 14, "%uu", num);
+    snprintf(num_buffer, 14, "%u", num);
     strcat(buf, num_buffer);
     buf_length += strlen(num_buffer);
 }
