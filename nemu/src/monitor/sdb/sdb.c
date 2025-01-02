@@ -56,21 +56,30 @@ static int cmd_q(char *args) {
 }
 
 static int cmd_si(char *args){
-  int step = 0;
-  if (args == NULL) step = 1;
-  else sscanf(args,"%d",&step);
-  cpu_exec(step);
+  char *num_str = strtok(NULL, " ");
+  int num = 0;
+  if (num_str != NULL) {
+    Assert(sscanf(num_str, "%d", &num), "The input step num is not a number");
+  } else {
+    /* no argument given, the default num of step is 1 */
+    num = 1;
+  }
+  cpu_exec(num);
   return 0;
 }
 
 static int cmd_info(char *args){
-    if(args == NULL)
-        printf("No args.\n");
-    else if(strcmp(args, "r") == 0)
-        isa_reg_display();
-    // else if(strcmp(args, "w") == 0)
-    //     sdb_watchpoint_display();
-    return 0;
+  char *arg = strtok(NULL, " ");
+  if (strcmp(arg, "r") == 0) {
+    /* info r : print the status of Rigister File*/
+    isa_reg_display();
+  } else if (strcmp(arg, "w") == 0) {
+    /* info w : print the info of watch point*/
+    //print_watchpoint();
+  } else {
+    printf("command info need argument r or w\n");
+  }
+  return 0;
 }
 
 static int cmd_x(char *args){
@@ -89,50 +98,50 @@ static int cmd_x(char *args){
 }
 
 //表达式求值
-static int cmd_p(char *args){
-  bool success=true;
-  int32_t res = expr(args, &success);
-  if (!success) 
-  {
-    printf("invalid expression\n");
-  } else 
-  {
-    printf("%d\n", res);
-  }
-  return 0; 
-}
+// static int cmd_p(char *args){
+//   bool success=true;
+//   int32_t res = expr(args, &success);
+//   if (!success) 
+//   {
+//     printf("invalid expression\n");
+//   } else 
+//   {
+//     printf("%d\n", res);
+//   }
+//   return 0; 
+// }
 
-//设置监视点
-static int cmd_w(char *args){
- if (!args)
-  {
-    printf("Usage: w EXPR\n");
-    return 0;
-  }
-  bool success;
-  int32_t res = expr(args, &success);
-  if (!success) 
-  {
-    printf("invalid expression\n");
-  } 
-  else 
-  {
-    wp_set(args, res);
-  }
-  return 0;
-}
+// //设置监视点
+// static int cmd_w(char *args){
+//  if (!args)
+//   {
+//     printf("Usage: w EXPR\n");
+//     return 0;
+//   }
+//   bool success;
+//   int32_t res = expr(args, &success);
+//   if (!success) 
+//   {
+//     printf("invalid expression\n");
+//   } 
+//   else 
+//   {
+//     wp_set(args, res);
+//   }
+//   return 0;
+// }
  
 //删除序列号为N的监视点
-static int cmd_d(char *args){
-  char *arg = strtok(NULL, "");
-  if (!arg) {
-    printf("Usage: d N\n");
-    return 0;
-  }
-  int no = strtol(arg, NULL, 10);
-  wp_remove(no);
-  return 0;
-}
+// static int cmd_d(char *args){
+//   char *arg = strtok(NULL, "");
+//   if (!arg) {
+//     printf("Usage: d N\n");
+//     return 0;
+//   }
+//   int no = strtol(arg, NULL, 10);
+//   wp_remove(no);
+//   return 0;
+// }
 
 static int cmd_help(char *args);
 
@@ -148,9 +157,9 @@ static struct {
   { "si", "Let the program step into N instructions and then pause the execution, when N is not given, the default is 1",cmd_si},
   { "info", "Display information about regersters(r) or watchpoints(w)", cmd_info},
   { "x", "Calculate the value of the expression EXPR and use the result as the starting memory address",cmd_x},
-  { "p", "expression evaluation", cmd_p},
-  { "w", "Set Watchpoint", cmd_w},
-  { "d", "Delete Watchpoint", cmd_d},
+  //{ "p", "expression evaluation", cmd_p},
+  //{ "w", "Set Watchpoint", cmd_w},
+  //{ "d", "Delete Watchpoint", cmd_d},
 
   /* TODO: Add more commands */
 
