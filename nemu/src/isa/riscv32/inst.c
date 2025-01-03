@@ -12,11 +12,12 @@
 *
 * See the Mulan PSL v2 for more details.
 ***************************************************************************************/
-
+#include <common.h>
 #include "local-include/reg.h"
 #include <cpu/cpu.h>
 #include <cpu/ifetch.h>
 #include <cpu/decode.h>
+#include <stdint.h>
 
 #define R(i) gpr(i)
 #define Mr vaddr_read
@@ -24,17 +25,30 @@
 
 enum {
   TYPE_I, TYPE_U, TYPE_S,
+  TYPE_R, TYPE_J, TYPE_B,
   TYPE_N, // none
 };
 
+// 这里的 src1 需要解引用是因为在 decode_operand 传递参数时，取的是 src1 的地址，因此此处的 src1 确实是一个地址
 #define src1R() do { *src1 = R(rs1); } while (0)
 #define src2R() do { *src2 = R(rs2); } while (0)
+// 立即数在不同类型的指令中的位置不同, SEXT 的作用是做符号扩展，符号扩展主要是照顾 BITS 从变量 i 中抽出的是一个无符号的数字，
+// 不能直接表示负数。这组数字不能直接赋值给一个 Int64_t，这样只会得到正数。只能手动构造出 64 位的有符号数。例如 immI 抽出的 12 位数字是 12 个 1，首位是 1，扩展成 64 位，那么自动将前 52 位全部变成 1，然后再转成 uint64_t
+// 最终的赋值式子是 *imm = (uint64_t) __x.n
 #define immI() do { *imm = SEXT(BITS(i, 31, 20), 12); } while(0)
+// 与上一条命令刚好相反，这条命令的立即数有 20 位，并且最低的有效位是第 12 位（假设索引从 0 开始），刚好与 immI 的低 12 位互补。两者求和的话，可以表示完整的 32 位数字
 #define immU() do { *imm = SEXT(BITS(i, 31, 12), 20) << 12; } while(0)
+// 31~25 共 7 位做高位，11~7 共 5 位做低位，两者拼接成完整的立即数，并且高位的首位决定最终数字的正负号
 #define immS() do { *imm = (SEXT(BITS(i, 31, 25), 7) << 5) | BITS(i, 11, 7); } while(0)
+
+#define immJ() do { *imm = (SEXT(BITS(i, 31, 31), 1) << 20) | BITS(i, 19, 12) << 12 | BITS(i, 20, 20) << 11 | BITS(i, 30, 21) << 1;} while(0)
+
+#define immB() do { *imm = (SEXT(BITS(i, 31, 31), 1) << 12) | BITS(i, 7, 7) << 11 | BITS(i, 30, 25) << 5 | BITS(i, 11, 8) << 1;} while(0)
+
 
 static void decode_operand(Decode *s, int *rd, word_t *src1, word_t *src2, word_t *imm, int type) {
   uint32_t i = s->isa.inst;
+  // BITS 通过位运算，抽取出二进制码中的某些位的数字，位的索引从 0 开始，最大是 31
   int rs1 = BITS(i, 19, 15);
   int rs2 = BITS(i, 24, 20);
   *rd     = BITS(i, 11, 7);
@@ -42,6 +56,9 @@ static void decode_operand(Decode *s, int *rd, word_t *src1, word_t *src2, word_
     case TYPE_I: src1R();          immI(); break;
     case TYPE_U:                   immU(); break;
     case TYPE_S: src1R(); src2R(); immS(); break;
+    case TYPE_J:                   immJ(); break;
+    case TYPE_B: src1R(); src2R(); immB(); break;
+    case TYPE_R: src1R(); src2R();       ; break;
     case TYPE_N: break;
     default: panic("unsupported type = %d", type);
   }
@@ -49,8 +66,11 @@ static void decode_operand(Decode *s, int *rd, word_t *src1, word_t *src2, word_
 
 static int decode_exec(Decode *s) {
   s->dnpc = s->snpc;
-
+// INSTPAT_INST and INSTPAT_MATCH 在 INSTPAT 中被用到，INSTPAT 定义在 decode.h
+// match 宏的作用是抽取操作数 
 #define INSTPAT_INST(s) ((s)->isa.inst)
+// 显示写出三个参数的名称，因此 __VA_ARGS__ 表示第四个及其后面的参数。
+// 由于 INSTPAT_MATCH 的参数就是 INSTPAT 的参数，所以 __VA_ARGS__ 实际上就是指令执行语句
 #define INSTPAT_MATCH(s, name, type, ... /* execute body */ ) { \
   int rd = 0; \
   word_t src1 = 0, src2 = 0, imm = 0; \
@@ -58,8 +78,15 @@ static int decode_exec(Decode *s) {
   __VA_ARGS__ ; \
 }
 
+  // INSTPAT_START 创建一个标签地址，INSTAPAT_END 即是标签地址的位置。
+  // 在匹配到某个 pattern 之后跳转到 END，有些类似于循环结构中的 break 的作用
+  // INSTPAT 匹配 pattern，然后再通过 INSTPAT_INST INSTPAT_MATCH 提取操作数
+
   INSTPAT_START();
   INSTPAT("??????? ????? ????? ??? ????? 00101 11", auipc  , U, R(rd) = s->pc + imm);
+  //load
+  INSTPAT("??????? ????? ????? ??? ????? 01101 11", lui    , U, R(rd) = imm);
+
   INSTPAT("??????? ????? ????? 100 ????? 00000 11", lbu    , I, R(rd) = Mr(src1 + imm, 1));
   INSTPAT("??????? ????? ????? 000 ????? 01000 11", sb     , S, Mw(src1 + imm, 1, src2));
 
