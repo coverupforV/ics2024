@@ -92,10 +92,11 @@ ASFLAGS  += -MMD $(INCFLAGS)
 LDFLAGS  += -z noexecstack $(addprefix -T, $(LDSCRIPTS))
 
 ## 4. Arch-Specific Configurations
-
+#$(info ARCH is $(ARCH))
 ### Paste in arch-specific configurations (e.g., from `scripts/x86_64-qemu.mk`)
 -include $(AM_HOME)/scripts/$(ARCH).mk
-
+#$(info CC is $(CC), ARCH is $(ARCH), cross compile is $(CROSS_COMPILE))
+#$(info common cflags $(COMMON_CFLAGS))
 ## 5. Compilation Rules
 
 ### Rule (compile): a single `.c` -> `.o` (gcc)
