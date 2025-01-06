@@ -131,6 +131,7 @@ static void statistic() {
 
 void assert_fail_msg() {
   IFDEF(CONFIG_ITRACE, display_inst());
+  IFDEF(CONFIG_FTRACE, print_func_stack());
   isa_reg_display();
   statistic();
 }
@@ -156,14 +157,13 @@ void cpu_exec(uint64_t n) {
     case NEMU_RUNNING: nemu_state.state = NEMU_STOP; break;
 
     case NEMU_END: case NEMU_ABORT:
-      if (nemu_state.halt_ret != 0) {
+      if (1 ||nemu_state.halt_ret != 0) {
          /* #ifdef CONFIG_ITRACE*/
               /*print_iringbuf();*/
           /*#endif*/
+          
           IFDEF(CONFIG_ITRACE, display_inst());
-          #ifdef CONFIG_FTRACE
-              print_func_stack();
-          #endif
+          IFDEF(CONFIG_FTRACE, print_func_stack());
       }
       Log("nemu: %s at pc = " FMT_WORD,
           (nemu_state.state == NEMU_ABORT ? ANSI_FMT("ABORT", ANSI_FG_RED) :
@@ -171,7 +171,7 @@ void cpu_exec(uint64_t n) {
             ANSI_FMT("HIT BAD TRAP", ANSI_FG_RED))),
           nemu_state.halt_pc);
       if (nemu_state.state == NEMU_ABORT || nemu_state.halt_ret != 0)
-          print_iringbuf();
+          display_inst();
       // fall through
     case NEMU_QUIT: statistic();
   }
