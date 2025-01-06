@@ -100,9 +100,11 @@ void process_jalr(int rd, word_t inst_val, vaddr_t cur, vaddr_t dst, word_t imm)
 }
 void print_func_stack() {
     printf("=========== The function stack ===========\n");
-    fnode *temp = func_stack_head;
-    while (temp != NULL) {
-        printf("%x: in %-25s, %s [%x@%s]\n", temp->pc, temp->cur_func->name, temp->type, temp->target_addr, temp->dst_func->name);
-        temp = temp->next;
+    for (fnode *temp = func_stack_head; temp != NULL; temp = temp->next) {
+        if (strcmp(temp->type, action_type[0]) == 0) {
+            printf("0x%x: %s [%s@0x%x]\n", temp->pc, temp->type, temp->dst_func->name, temp->target_addr);
+        } else {
+            printf("0x%x:   %s [%s]              # 注释\n", temp->pc, temp->type, temp->dst_func->name);
+        }
     }
 }
