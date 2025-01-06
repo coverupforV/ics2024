@@ -6,14 +6,17 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include "debug.h"
+
 #define NAME_LENGTH 128
 #define FT_CALL 0
 #define FT_RET  1
+
 typedef struct {
     char name[NAME_LENGTH];
     vaddr_t addr;
     size_t size;
 } finfo;
+
 typedef struct fnode {
     finfo *cur_func;
     finfo *dst_func;
@@ -23,12 +26,14 @@ typedef struct fnode {
     vaddr_t target_addr;
     int call_depth;
 } fnode;
+
 static finfo funcs[102400];
 static unsigned int ind = 0;
 static fnode* func_stack_head = NULL;
 static fnode* func_stack_tail = NULL;
 static const char *action_type[] = {"Call", "Ret "};
 static int call_depth = 0;
+
 void init_elf(const char* elf_file) {
     if (elf_file == NULL) {
         Log("elf file path is null");
@@ -104,6 +109,9 @@ void process_jal(int rd, vaddr_t cur, vaddr_t dst) {
         append(cur, dst, dst_index, action_type[0]);
     }
 }
+/* 当某个函数的 return 语句内容是一个函数调用时，编译器会把这个函数的返回优化掉，返回地址直接设为 x0，称为尾调用
+ * TODO: 参考 https://www.cnblogs.com/nosae/p/17066439.html#%E5%AE%9E%E7%8E%B0ftrace，完成尾调用的补充
+ * */
 void process_jalr(int rd, word_t inst_val, vaddr_t cur, vaddr_t dst, word_t imm) {
     int dst_index = which_func(dst);
     if (dst_index < 0)
