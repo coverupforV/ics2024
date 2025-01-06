@@ -17,7 +17,9 @@
 #include <cpu/decode.h>
 #include <cpu/difftest.h>
 #include <locale.h>
+#include <stdio.h>
 #include "../monitor/sdb/sdb.h"
+#include "utils.h"
 
 /* The assembly code of instructions executed is only output to the screen
  * when the number of instructions executed is less than this value.
@@ -26,6 +28,12 @@
  */
 #define MAX_INST_TO_PRINT 10
 
+#ifdef CONFIG_ITRACE_COND
+#define LOG_CAP 16
+  char iringbuf[LOG_CAP][LOG_LENGTH]; 
+  size_t ringbuf_index = 0;
+#endif
+
 CPU_state cpu = {};
 uint64_t g_nr_guest_inst = 0;
 static uint64_t g_timer = 0; // unit: us
@@ -33,9 +41,25 @@ static bool g_print_step = false;
 
 void device_update();
 
+static void print_iringbuf() {
+#ifdef CONFIG_ITRACE_COND
+    printf("====== The nearest %d instructions ======\n", LOG_CAP);
+    size_t end = ringbuf_index <= LOG_CAP ? ringbuf_index : LOG_CAP;
+    for (int i = 0; i < end; i++) {
+        if (i == (ringbuf_index - 1) % LOG_CAP) {
+            printf(ANSI_FMT("%s\n", ANSI_FG_RED), iringbuf[i]);
+        } else 
+            printf("%s\n", iringbuf[i]);
+    }
+#endif
+}
+
 static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
+  // ITRACE_COND 就是由 CONFIG_ITRACE_COND 推断而来。这个宏的定义在 nemu/Makefile 中。因为 sdb.h common.h stdbool .h 最终 宏定义中的 true 和 false 都能正常被解释成 0 1
 #ifdef CONFIG_ITRACE_COND
   if (ITRACE_COND) { log_write("%s\n", _this->logbuf); }
+  strncpy(iringbuf[ringbuf_index % LOG_CAP], _this->logbuf, LOG_LENGTH);
+  ringbuf_index++;
 #endif
   if (g_print_step) { IFDEF(CONFIG_ITRACE, puts(_this->logbuf)); }
   IFDEF(CONFIG_DIFFTEST, difftest_step(_this->pc, dnpc));
@@ -131,6 +155,8 @@ void cpu_exec(uint64_t n) {
            (nemu_state.halt_ret == 0 ? ANSI_FMT("HIT GOOD TRAP", ANSI_FG_GREEN) :
             ANSI_FMT("HIT BAD TRAP", ANSI_FG_RED))),
           nemu_state.halt_pc);
+          if (nemu_state.state == NEMU_ABORT || nemu_state.halt_ret != 0)
+          print_iringbuf();
       // fall through
     case NEMU_QUIT: statistic();
   }
