@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include "debug.h"
 #define NAME_LENGTH 128
 #define FT_CALL 0
 #define FT_RET  1
@@ -27,6 +28,10 @@ static fnode* func_stack_head = NULL;
 static fnode* func_stack_tail = NULL;
 static const char *action_type[] = {"Call", "Ret"};
 void init_elf(const char* elf_file) {
+    if (elf_file == NULL) {
+        Log("elf file path is null");
+        return;
+    }
     int fd;
     struct stat st;
     fd = open(elf_file, O_RDONLY);

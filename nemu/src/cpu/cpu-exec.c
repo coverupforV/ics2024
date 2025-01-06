@@ -19,6 +19,7 @@
 #include <locale.h>
 #include <stdio.h>
 #include "../monitor/sdb/sdb.h"
+#include "macro.h"
 #include "utils.h"
 #include "../utils/ftrace.h"
 
@@ -29,11 +30,11 @@
  */
 #define MAX_INST_TO_PRINT 10
 
-#ifdef CONFIG_ITRACE_COND
-#define LOG_CAP 16
-  char iringbuf[LOG_CAP][LOG_LENGTH]; 
-  size_t ringbuf_index = 0;
-#endif
+// #ifdef CONFIG_ITRACE_COND
+// #define LOG_CAP 16
+//   char iringbuf[LOG_CAP][LOG_LENGTH]; 
+//   size_t ringbuf_index = 0;
+// #endif
 
 CPU_state cpu = {};
 uint64_t g_nr_guest_inst = 0;
@@ -42,25 +43,28 @@ static bool g_print_step = false;
 
 void device_update();
 
-static void print_iringbuf() {
-#ifdef CONFIG_ITRACE_COND
-    printf("====== The nearest %d instructions ======\n", LOG_CAP);
-    size_t end = ringbuf_index <= LOG_CAP ? ringbuf_index : LOG_CAP;
-    for (int i = 0; i < end; i++) {
-        if (i == (ringbuf_index - 1) % LOG_CAP) {
-            printf(ANSI_FMT("%s\n", ANSI_FG_RED), iringbuf[i]);
-        } else 
-            printf("%s\n", iringbuf[i]);
-    }
-#endif
-}
+void display_inst();
+
+// #ifdef CONFIG_ITRACE_COND
+// static void print_iringbuf() {
+
+//     printf("====== The nearest %d instructions ======\n", LOG_CAP);
+//     size_t end = ringbuf_index <= LOG_CAP ? ringbuf_index : LOG_CAP;
+//     for (int i = 0; i < end; i++) {
+//         if (i == (ringbuf_index - 1) % LOG_CAP) {
+//             printf(ANSI_FMT("%s\n", ANSI_FG_RED), iringbuf[i]);
+//         } else 
+//             printf("%s\n", iringbuf[i]);
+//     }
+// }
+// #endif
 
 static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
   // ITRACE_COND 就是由 CONFIG_ITRACE_COND 推断而来。这个宏的定义在 nemu/Makefile 中。因为 sdb.h common.h stdbool .h 最终 宏定义中的 true 和 false 都能正常被解释成 0 1
 #ifdef CONFIG_ITRACE_COND
   if (ITRACE_COND) { log_write("%s\n", _this->logbuf); }
-  strncpy(iringbuf[ringbuf_index % LOG_CAP], _this->logbuf, LOG_LENGTH);
-  ringbuf_index++;
+  // strncpy(iringbuf[ringbuf_index % LOG_CAP], _this->logbuf, LOG_LENGTH);
+  // ringbuf_index++;
 #endif
   if (g_print_step) { IFDEF(CONFIG_ITRACE, puts(_this->logbuf)); }
   IFDEF(CONFIG_DIFFTEST, difftest_step(_this->pc, dnpc));
@@ -126,6 +130,7 @@ static void statistic() {
 }
 
 void assert_fail_msg() {
+  IFDEF(CONFIG_ITRACE, display_inst());
   isa_reg_display();
   statistic();
 }
@@ -151,14 +156,15 @@ void cpu_exec(uint64_t n) {
     case NEMU_RUNNING: nemu_state.state = NEMU_STOP; break;
 
     case NEMU_END: case NEMU_ABORT:
-      //if (nemu_state.state == NEMU_ABORT || nemu_state.halt_ret != 0) {
-          #ifdef CONFIG_ITRACE
-              print_iringbuf();
-          #endif
+      if (nemu_state.halt_ret != 0) {
+         /* #ifdef CONFIG_ITRACE*/
+              /*print_iringbuf();*/
+          /*#endif*/
+          IFDEF(CONFIG_ITRACE, display_inst());
           #ifdef CONFIG_FTRACE
               print_func_stack();
           #endif
-      //}
+      }
       Log("nemu: %s at pc = " FMT_WORD,
           (nemu_state.state == NEMU_ABORT ? ANSI_FMT("ABORT", ANSI_FG_RED) :
            (nemu_state.halt_ret == 0 ? ANSI_FMT("HIT GOOD TRAP", ANSI_FG_GREEN) :

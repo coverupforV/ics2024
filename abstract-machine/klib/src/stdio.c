@@ -6,14 +6,14 @@
 #if !defined(__ISA_NATIVE__) || defined(__NATIVE_USE_KLIB__)
 
 static char HEX_CHARACTERS[] = "0123456789abcdef";
-static unsigned int int2str(char *buffer, int num) {
+static int int2str(char *buffer, int num) {
     int neg = 0;
     if (num == 0) {
         buffer[0] = '0';
         return 1;
     } else if (num < 0)
         neg = 1;
-    unsigned int i = 0;
+    int i = 0;
     // 当 num 是负数时，直接给 num 取相反数可能会导致溢出，例如[-256,255] 中的 -256.
     // 因此，求模之后根据余数是否为负数，调整符号
     int remainder;
@@ -28,30 +28,51 @@ static unsigned int int2str(char *buffer, int num) {
     }
     return i;
 }
-static unsigned int pointer2hex(char *buffer, size_t p) {
+
+static int uint2str(char *buffer, unsigned int num) {
+    
+    if (num == 0) {
+        buffer[0] = '0';
+        return 1;
+    }
+    int i = 0;
     int remainder;
-    unsigned int i = 0;
-    for (; p; p /= 16) {
+    for (; num; num /= 10) {
+        remainder = num % 10;
+        buffer[i++] = HEX_CHARACTERS[remainder % 10];
+    }
+    return i;
+}
+
+static int pointer2hex(char *buffer, void *ptr) {
+    int remainder;
+    int i = 0;
+    size_t p = (size_t)ptr;
+    if (p == 0) {
+        strcpy(buffer, ")lin(");        // (nil) 反过来写
+        return 5;
+    }
+    do {
         remainder = p % 16;
         buffer[i++] = HEX_CHARACTERS[remainder % 16];
-    }
+    } while (p /= 16);
     // 补 0
-    for (int k = i; k <= sizeof(size_t) * 2; k++) {
-        buffer[i++] = '0';
-    }
+    /*for (int k = i; k <= sizeof(size_t) * 2; k++) {
+     *    buffer[i++] = '0';
+     *}*/
     buffer[i++] = 'x';
     buffer[i++] = '0';
     return i;
 }
-static unsigned int uint2hex(char *buffer, unsigned int u) {
+static int uint2hex(char *buffer, unsigned int u) {
     int remainder;
-    unsigned int i = 0;
-    for (; u; u /= 16) {
+    int i = 0;
+    do {
         remainder = u % 16;
         buffer[i++] = HEX_CHARACTERS[remainder % 16];
-    }
-    buffer[i++] = 'x';
-    buffer[i++] = '0';
+    } while (u /= 16);
+    /*buffer[i++] = 'x';*/
+    /*buffer[i++] = '0';*/
     return i;
 }
 
@@ -76,18 +97,19 @@ int snprintf(char *out, size_t n, const char *fmt, ...) {
     return vsnprintf(out, n, fmt, ap);
 }
 
-#define append(x) {out[j++]=x; if (j >= n) {break;}}
+#define append(x) do{out[j++]=x; }while(0)
 
 int vsnprintf(char *out, size_t n, const char *fmt, va_list ap) {
   int state = 0;
     int j = 0, num;
+    unsigned int u_num;
     char c, ch;
     char *s;
-    size_t p;
+    void *p;
     char buffer[50];
     unsigned int length;
     unsigned int u;
-    while (c = *fmt++, c) {
+    while (c = *fmt++, c  && n > 0 && j < n - 1) {
         switch (state) {
             case 0:
                 if (c == '%')
@@ -107,6 +129,13 @@ int vsnprintf(char *out, size_t n, const char *fmt, va_list ap) {
                             append(buffer[i]);
                         }
                         break;
+                    case 'u':
+                        u_num = va_arg(ap, unsigned int);
+                        length = uint2str(buffer, u_num);
+                        for (int i = length - 1; i >= 0; i--) {
+                            append(buffer[i]);
+                        }
+                        break;
                     case 'c':
                         // char type promote to int
                         ch = va_arg(ap, int);
@@ -119,16 +148,16 @@ int vsnprintf(char *out, size_t n, const char *fmt, va_list ap) {
                         }
                         break;
                     case 'p':
-                        p = va_arg(ap, size_t);
+                        p = va_arg(ap, void*);
                         length = pointer2hex(buffer, p); 
-                        for (unsigned int i = length - 1; i >= 0; i--) {
+                        for (int i = length - 1; i >= 0; i--) {
                             append(buffer[i]);
                         }
                         break;
                     case 'x':
                         u = va_arg(ap, unsigned int);
                         length = uint2hex(buffer, u); 
-                        for (unsigned int i = length - 1; i >= 0; i--) {
+                        for (int i = length - 1; i >= 0; i--) {
                             append(buffer[i]);
                         }
                         break;
