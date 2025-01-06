@@ -14,6 +14,7 @@
 ***************************************************************************************/
 #include <common.h>
 #include "local-include/reg.h"
+#include "macro.h"
 #include <cpu/cpu.h>
 #include <cpu/ifetch.h>
 #include <cpu/decode.h>
@@ -115,7 +116,7 @@ static int decode_exec(Decode *s) {
   INSTPAT("0100000 ????? ????? 101 ????? 01100 11", sra    , R, R(rd) = (int32_t)src1 >> (src2 & 0x1f));
   // Integer multiplication and division
   INSTPAT("0000001 ????? ????? 000 ????? 01100 11", mul    , R, R(rd) = src1 * src2);
-  INSTPAT("0000001 ????? ????? 001 ????? 01100 11", mulh   , R, R(rd) = (int32_t)(((int64_t)src1 * (int64_t)src2) >> 32));
+  INSTPAT("0000001 ????? ????? 001 ????? 01100 11", mulh   , R, R(rd) = (int32_t)((SEXT((int64_t)src1, 32) * SEXT((int64_t)src2, 32)) >> 32));
   INSTPAT("0000001 ????? ????? 011 ????? 01100 11", mulhu  , R, R(rd) = (uint32_t)(((uint64_t)src1 * (uint64_t)src2) >> 32));
   INSTPAT("0000001 ????? ????? 010 ????? 01100 11", mulhsu , R, R(rd) = (int32_t)(((int64_t)src1 * src2) >> 32));
   INSTPAT("0000001 ????? ????? 100 ????? 01100 11", div    , R, R(rd) = (int32_t)src1 / (int32_t)src2);
