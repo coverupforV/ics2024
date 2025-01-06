@@ -158,10 +158,6 @@ void cpu_exec(uint64_t n) {
 
     case NEMU_END: case NEMU_ABORT:
       if (1 ||nemu_state.halt_ret != 0) {
-         /* #ifdef CONFIG_ITRACE*/
-              /*print_iringbuf();*/
-          /*#endif*/
-          
           IFDEF(CONFIG_ITRACE, display_inst());
           IFDEF(CONFIG_FTRACE, print_func_stack());
       }
