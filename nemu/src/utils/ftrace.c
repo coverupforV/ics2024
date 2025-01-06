@@ -133,4 +133,5 @@ void print_func_stack() {
         printf("%x: %*s%s [%s@%x]\n", temp->pc, temp->call_depth, "", temp->type, temp->dst_func->name, temp->target_addr);
         temp = temp->next;
     }
+    TODO();//函数栈一直为空，原因未知
 }
