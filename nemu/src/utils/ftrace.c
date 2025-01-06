@@ -86,7 +86,7 @@ void append(vaddr_t cur, vaddr_t target_addr, int dst_index, const char *type) {
     newnode->target_addr = target_addr;
     newnode->next = NULL;
 
-    if (type == action_type[0]) {
+    if (strcmp(type, action_type[0]) == 0) {
         newnode->call_depth = call_depth;
         call_depth += 2;
     } else {
