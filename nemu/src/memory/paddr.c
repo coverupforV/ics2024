@@ -51,8 +51,21 @@ void init_mem() {
 }
 
 word_t paddr_read(paddr_t addr, int len) {
-  if (likely(in_pmem(addr))) return pmem_read(addr, len);
-  IFDEF(CONFIG_DEVICE, return mmio_read(addr, len));
+  if (likely(in_pmem(addr))){
+      word_t w = pmem_read(addr, len);
+#ifdef CONFIG_MTRACE
+      Log("Read from memory at %#.8x for %d bytes: %x.", addr, len, w);
+#endif 
+      return w;
+    }
+  
+#ifdef CONFIG_DEVICE
+    word_t w = mmio_read(addr, len); 
+#ifdef CONFIG_MTRACE
+      Log("Read from memory at %#.8x for %d bytes: %x.", addr, len, w);
+#endif 
+    return w;
+#endif
   out_of_bound(addr);
   return 0;
 }
