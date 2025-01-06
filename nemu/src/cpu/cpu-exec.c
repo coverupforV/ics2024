@@ -168,6 +168,7 @@ void cpu_exec(uint64_t n) {
           nemu_state.halt_pc);
       if (nemu_state.state == NEMU_ABORT || nemu_state.halt_ret != 0)
           print_func_stack();
+          
       // fall through
     case NEMU_QUIT: statistic();
   }
