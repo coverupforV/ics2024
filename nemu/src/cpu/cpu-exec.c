@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include "../monitor/sdb/sdb.h"
 #include "utils.h"
+#include "../utils/ftrace.h"
 
 /* The assembly code of instructions executed is only output to the screen
  * when the number of instructions executed is less than this value.
@@ -150,6 +151,14 @@ void cpu_exec(uint64_t n) {
     case NEMU_RUNNING: nemu_state.state = NEMU_STOP; break;
 
     case NEMU_END: case NEMU_ABORT:
+    //if (nemu_state.state == NEMU_ABORT || nemu_state.halt_ret != 0) {
+          #ifdef CONFIG_ITRACE
+              print_iringbuf();
+          #endif
+          #ifdef CONFIG_FTRACE
+              print_func_stack();
+          #endif
+      //}
       Log("nemu: %s at pc = " FMT_WORD,
           (nemu_state.state == NEMU_ABORT ? ANSI_FMT("ABORT", ANSI_FG_RED) :
            (nemu_state.halt_ret == 0 ? ANSI_FMT("HIT GOOD TRAP", ANSI_FG_GREEN) :
@@ -157,6 +166,7 @@ void cpu_exec(uint64_t n) {
           nemu_state.halt_pc);
           if (nemu_state.state == NEMU_ABORT || nemu_state.halt_ret != 0)
           print_iringbuf();
+          
       // fall through
     case NEMU_QUIT: statistic();
   }
