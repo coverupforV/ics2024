@@ -126,12 +126,12 @@ void process_jalr(int rd, word_t inst_val, vaddr_t cur, vaddr_t dst, word_t imm)
 void print_func_stack() {
     printf("=========== The function stack ===========\n");
     fnode *temp = func_stack_head;
-    if(temp == NULL){
-        printf("The function stack is empty\n");
-    }
+    // if(temp == NULL){
+    //     printf("The function stack is empty\n");
+    // }
     while (temp != NULL) {
         printf("%x: %*s%s [%s@%x]\n", temp->pc, temp->call_depth, "", temp->type, temp->dst_func->name, temp->target_addr);
         temp = temp->next;
     }
-    TODO();//函数栈一直为空，原因未知
+    //TODO();函数栈一直为空，原因未知
 }
