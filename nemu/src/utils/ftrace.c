@@ -29,7 +29,7 @@ typedef struct fnode {
 
 static finfo funcs[102400];
 static unsigned int ind = 0;
-fnode* func_stack_head = NULL;
+static fnode* func_stack_head = NULL;
 static fnode* func_stack_tail = NULL;
 static const char *action_type[] = {"Call", "Ret "};
 static int call_depth = 0;
