@@ -30,10 +30,11 @@ typedef struct fnode {
 
 static finfo funcs[102400];
 static unsigned int ind = 0;
+static int call_depth = 0;
 static fnode* func_stack_head = NULL;
 static fnode* func_stack_tail = NULL;
 static const char *action_type[] = {"Call", "Ret "};
-static int call_depth = 0;
+
 
 void init_elf(const char* elf_file) {
     if (elf_file == NULL) {
@@ -87,7 +88,7 @@ void append(vaddr_t cur, vaddr_t target_addr, int dst_index, const char *type) {
     newnode->target_addr = target_addr;
     newnode->next = NULL;
 
-    if (strcmp(type, action_type[0]) == 0) {
+    if (type == action_type[0]) {
         newnode->call_depth = call_depth;
         call_depth += 2;
     } else {
